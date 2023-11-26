@@ -138,4 +138,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(os.environ.get("CAR_ALERT_BOT_TOKEN"))
     asyncio.run(main())
