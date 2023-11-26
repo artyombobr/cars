@@ -1,13 +1,16 @@
 name: Run Python script every hour
 
-# on:
-#   schedule:
-#     - cron: '0 * * * *'
+on:
+  schedule:
+    - cron: '*/5 * * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env: 
+      CAR_ALERT_BOT_TOKEN : ${{ secrets.CAR_ALERT_BOT_TOKEN }}
+      DB_PASSWORD : ${{ secrets.DB_PASSWORD }}
+      DB_USER : ${{ secrets.DB_USER }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -19,4 +22,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Python script
-      run: python your_script.py # замените 'your_script.py' на имя вашего скрипта
+      run: python main.py # замените 'your_script.py' на имя вашего скрипта
