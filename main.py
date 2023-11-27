@@ -1,5 +1,4 @@
 import os
-import ssl
 import requests
 import sqlalchemy as db
 from sqlalchemy import create_engine
@@ -23,7 +22,6 @@ from bs4 import BeautifulSoup
 
 chat_id = "170311207"
 
-ssl_context = ssl.SSLContext()
 
 engine = create_engine(
     "{dialect}://{user}:{password}@{host}/{db}".format(
@@ -33,7 +31,7 @@ engine = create_engine(
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
-    connect_args={'ssl_context': ssl_context},
+    connect_args={'sslmode':'require'},
     echo=True
 )
 
