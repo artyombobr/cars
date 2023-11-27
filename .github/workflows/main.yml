@@ -19,6 +19,6 @@ jobs:
         pip install -r requirements.txt
     - name: Run Python script
       run: |
-        export CAR_ALERT_BOT_TOKEN=${{ secrets.CAR_ALERT_BOT_TOKEN }}
+        export CAR_ALERT_BOT_TOKEN=ARTYOMBOBR
         python main.py # замените 'your_script.py' на имя вашего скрипта
 
