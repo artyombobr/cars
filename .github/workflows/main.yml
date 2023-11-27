@@ -19,4 +19,6 @@ jobs:
       run: echo MY_VAR
     - name: Step 2
       run: echo ${{ secrets.CAR_ALERT_BOT_TOKEN }}
+    - name: Run Python script
+      run: python main.py # замените 'your_script.py' на имя вашего скрипта
 
