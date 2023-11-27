@@ -18,7 +18,7 @@ from telegram.ext import (
 
 
 def main():
-    print("ENV: " + os.environ.get("CAR_ALERT_BOT_TOKEN"))
+    print("TEST ENV: " + os.environ.get("CAR_ALERT_BOT_TOKEN"))
 
 
 if __name__ == "__main__":
