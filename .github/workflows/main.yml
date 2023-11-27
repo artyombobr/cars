@@ -1,8 +1,8 @@
 name: Run Python script every 5 minutes
 
-# on:
-#   schedule:
-#     - cron: '*/5 * * * *'
+on:
+  schedule:
+    - cron: '* * * * *'
 
 jobs:
   build:
@@ -12,14 +12,11 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_USER: ${{ secrets.DB_USER }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x' # замените '3.x' на версию Python, которую вы используете
-    - name: Install dependencies
+    - name: Set  Environment Variables
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run Python script
-      run: python main.py # замените 'your_script.py' на имя вашего скрипта
+        export MY_VAR=TESTTESTTEST
+    - name: Step 1
+      run: echo MY_VAR
+    - name: Step 2
+      run: echo ${{ secrets.CAR_ALERT_BOT_TOKEN }}
+
