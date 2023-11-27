@@ -26,11 +26,11 @@ jobs:
         export MY_VAR=TESTTESTTEST
         export MY_VAR2=${{ secrets.CAR_ALERT_BOT_TOKEN }}
     - name: Step 1
-      run: echo $MY_VAR
+      run: echo MY_VAR
     - name: Step 2
       run: echo ${{ secrets.CAR_ALERT_BOT_TOKEN }}
     - name: Step 3
-      run: echo $CAR_ALERT_BOT_TOKEN
+      run: echo CAR_ALERT_BOT_TOKEN
     - name: Run Python script
       run: python main.py # замените 'your_script.py' на имя вашего скрипта
 
