@@ -10,7 +10,7 @@ jobs:
     steps:
     - name: Retrieve the secret and decode it to a file
       env:
-        CERTIFICATE_BASE64: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
+        CERTIFICATE_BASE64: TEST
       run: |
         echo $CERTIFICATE_BASE64
 
