@@ -98,20 +98,20 @@ bot = telegram.Bot(token=os.environ.get("CAR_ALERT_BOT_TOKEN"))
 
 
 async def send_message(car_info):
-    # print(car_info)
-    # session.add(Cars(
-    #     id=car_info["vin"],
-    #     description=car_info["description"],
-    #     url=car_info["url"],
-    #     image_url=car_info["image_url"]
-    # ))
+    print(car_info)
+    session.add(Cars(
+        id=car_info["vin"],
+        description=car_info["description"],
+        url=car_info["url"],
+        image_url=car_info["image_url"]
+    ))
     await bot.send_photo(
         chat_id=chat_id,
         caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>",
         photo=car_info["image_url"],
         parse_mode="HTML"
     )
-    # session.commit()
+    session.commit()
 
 
 def get_sent_cars():
