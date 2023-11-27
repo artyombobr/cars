@@ -23,15 +23,14 @@ from bs4 import BeautifulSoup
 chat_id = "170311207"
 
 engine = create_engine(
-    "{dialect}://{user}:{password}@{host}/{db}".format(
+    "{dialect}://{user}:{password}@{host}/{db}?sslmode=require".format(
         dialect="postgresql",
         user=os.environ.get("DB_USER"),
         password=os.environ.get("DB_PASSWORD"),
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
-    echo=True,
-    connect_args=dict(sslmode="allow")
+    echo=True
 )
 
 Session = sessionmaker(bind=engine)
