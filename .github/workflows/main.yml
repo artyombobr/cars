@@ -8,9 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-        CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_USER: ${{ secrets.DB_USER }}
+        CAR_ALERT_BOT_TOKEN: ${{ env.CAR_ALERT_BOT_TOKEN }}
+        DB_PASSWORD: ${{ env.DB_PASSWORD }}
+        DB_USER: ${{ env.DB_USER }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
