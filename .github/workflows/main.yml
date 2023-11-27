@@ -12,6 +12,15 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_USER: ${{ secrets.DB_USER }}
     steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x' # замените '3.x' на версию Python, которую вы используете
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
     - name: Set  Environment Variables
       run: |
         export MY_VAR=TESTTESTTEST
