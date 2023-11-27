@@ -32,7 +32,7 @@ engine = create_engine(
     ),
     connect_args={'sslmode': 'require'},
     echo=True
-).connect()
+)
 
 Session = sessionmaker(bind=engine)
 session = Session()
