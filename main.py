@@ -24,14 +24,13 @@ chat_id = "170311207"
 
 
 engine = create_engine(
-    "{dialect}://{user}:{password}@{host}/{db}".format(
-        dialect="postgresql",
+    "{dialect}://{user}:{password}@{host}:5432/{db}?sslmode=require".format(
+        dialect="postgresql+psycopg2",
         user=os.environ.get("DB_USER"),
         password=os.environ.get("DB_PASSWORD"),
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
-    connect_args={'sslmode':'require'},
     echo=True
 )
 
@@ -100,19 +99,19 @@ bot = telegram.Bot(token=os.environ.get("CAR_ALERT_BOT_TOKEN"))
 
 async def send_message(car_info):
     # print(car_info)
-    session.add(Cars(
-        id=car_info["vin"],
-        description=car_info["description"],
-        url=car_info["url"],
-        image_url=car_info["image_url"]
-    ))
+    # session.add(Cars(
+    #     id=car_info["vin"],
+    #     description=car_info["description"],
+    #     url=car_info["url"],
+    #     image_url=car_info["image_url"]
+    # ))
     await bot.send_photo(
         chat_id=chat_id,
         caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>",
         photo=car_info["image_url"],
         parse_mode="HTML"
     )
-    session.commit()
+    # session.commit()
 
 
 def get_sent_cars():
