@@ -30,9 +30,9 @@ engine = create_engine(
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
-    connect_args={'ssl_context': True},
+    connect_args={'sslmode': 'require'},
     echo=True
-)
+).connect()
 
 Session = sessionmaker(bind=engine)
 session = Session()
