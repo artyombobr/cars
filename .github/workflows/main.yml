@@ -2,7 +2,7 @@ name: Run Python script every 5 minutes
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/2 * * * *'
 
 jobs:
   build:
@@ -10,7 +10,7 @@ jobs:
     steps:
     - name: Retrieve the secret and decode it to a file
       env:
-        CERTIFICATE_BASE64: TEST
+        CERTIFICATE_BASE64: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
       run: |
         echo $CERTIFICATE_BASE64
 
