@@ -53,14 +53,20 @@ def openlane_cars():
             'MakeModels': [
                 {
                     'Make': 'Audi',
-                    'Models': [
-                        'Q8',
-                    ],
+                    'Models': ['Q8'],
                 },
+                {
+                    'Make': 'BMW',
+                    'Models': ["X4", "X5"]
+                }
             ],
             'FuelTypes': [
                 'Diesel',
             ],
+            'RegistrationYearRange': {
+                'From': 2019,
+                'To': None
+            }
         },
         'Sort': {
             'Field': 'BatchStartDateForSorting',
@@ -88,13 +94,26 @@ def openlane_cars():
                 vin=car["ChassisNumber"],
                 description=car["CarTitleList"]["en"],
                 url=base_url + str(car["AuctionId"]),
-                image_url=car["ThumbnailUrl"]
+                image_url=car["ThumbnailUrl"],
+                price=car["BuyNowPrice"],
+                estimated_price=car["RequestedSalesPrice"],
+                currency=car["CurrencyCodeId"]
             )
 
     return new_cars
 
 
 bot = telegram.Bot(token=os.environ.get("CAR_ALERT_BOT_TOKEN"))
+
+
+def get_price(car_info):
+    if car_info["price"] > 0:
+        price = '{0:,}'.format(int(car_info["price"])).replace(',', ' ')
+        return "\n\n<b>" + price + " " + car_info["currency"] + "</b>"
+    elif car_info["estimated_price"] > 0:
+        price = '{0:,}'.format(int(car_info["estimated_price"])).replace(',', ' ')
+        return "\n\n<b>" + price + " " + car_info["currency"] + "</b>"
+    return ""
 
 
 async def send_message(car_info):
@@ -105,9 +124,12 @@ async def send_message(car_info):
         url=car_info["url"],
         image_url=car_info["image_url"]
     ))
+
+    price = get_price(car_info)
+
     await bot.send_photo(
         chat_id=chat_id,
-        caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>",
+        caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>" + price,
         photo=car_info["image_url"],
         parse_mode="HTML"
     )
@@ -124,14 +146,18 @@ def get_sent_cars():
 
 
 async def main():
+    semaphore = asyncio.Semaphore(5)
+
     new_cars = openlane_cars()
     sent_cars = get_sent_cars()
 
     messages = list()
+
     for vin in new_cars:
         if vin in sent_cars:
             continue
-        messages.append(send_message(new_cars[vin]))
+        async with semaphore:
+            messages.append(send_message(new_cars[vin]))
 
     await asyncio.gather(*messages)
 
