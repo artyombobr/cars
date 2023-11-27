@@ -23,13 +23,14 @@ from bs4 import BeautifulSoup
 chat_id = "170311207"
 
 engine = create_engine(
-    "{dialect}://{user}:{password}@{host}/{db}?sslmode=require".format(
+    "{dialect}://{user}:{password}@{host}/{db}".format(
         dialect="postgresql",
         user=os.environ.get("DB_USER"),
         password=os.environ.get("DB_PASSWORD"),
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
+    connect_args={'ssl_context': True},
     echo=True
 )
 
