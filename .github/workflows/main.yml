@@ -20,5 +20,7 @@ jobs:
     - name: Run Python script
       env: 
         CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-      run: python main.py # замените 'your_script.py' на имя вашего скрипта
+      run: |
+        export CAR_ALERT_BOT_TOKEN=$CAR_ALERT_BOT_TOKEN
+        python main.py # замените 'your_script.py' на имя вашего скрипта
 
