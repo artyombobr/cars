@@ -30,7 +30,8 @@ engine = create_engine(
         host="flora.db.elephantsql.com",
         db="pblpfbsi"
     ),
-    echo=True
+    echo=True,
+    connect_args=dict(sslmode="allow")
 )
 
 Session = sessionmaker(bind=engine)
