@@ -8,29 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x' # замените '3.x' на версию Python, которую вы используете
-    - name: Install dependencies
+    - name: Retrieve the secret and decode it to a file
+      env:
+        CERTIFICATE_BASE64: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-      env: 
-        CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_USER: ${{ secrets.DB_USER }}
-    - name: Set  Environment Variables
-      run: |
-        export MY_VAR=TESTTESTTEST
-        export MY_VAR2=${{ secrets.CAR_ALERT_BOT_TOKEN }}
-    - name: Step 1
-      run: echo MY_VAR
-    - name: Step 2
-      run: echo ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-    - name: Step 3
-      run: echo CAR_ALERT_BOT_TOKEN
-    - name: Run Python script
-      run: python main.py # замените 'your_script.py' на имя вашего скрипта
+        echo $CERTIFICATE_BASE64
 
