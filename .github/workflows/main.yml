@@ -8,9 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-        CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_USER: ${{ secrets.DB_USER }}
+        CAR_ALERT_BOT_TOKEN: '${{ secrets.CAR_ALERT_BOT_TOKEN }}'
+        DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+        DB_USER: '${{ secrets.DB_USER }}'
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -24,10 +24,11 @@ jobs:
     - name: Set  Environment Variables
       run: |
         export MY_VAR=TESTTESTTEST
+        export MY_VAR2=${{ secrets.CAR_ALERT_BOT_TOKEN }}
     - name: Step 1
       run: echo MY_VAR
     - name: Step 2
-      run: echo ${{ secrets.CAR_ALERT_BOT_TOKEN }}
+      run: echo '${{ secrets.CAR_ALERT_BOT_TOKEN }}'
     - name: Run Python script
       run: python main.py # замените 'your_script.py' на имя вашего скрипта
 
