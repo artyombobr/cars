@@ -1,5 +1,7 @@
 import os
+import re
 import requests
+import logging
 import sqlalchemy as db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,6 +15,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.request import HTTPXRequest
 
 Base = declarative_base()
 from html.parser import HTMLParser
@@ -21,7 +24,6 @@ import asyncio
 from bs4 import BeautifulSoup
 
 chat_id = "170311207"
-
 
 engine = create_engine(
     "{dialect}://{user}:{password}@{host}:5432/{db}?sslmode=require".format(
@@ -91,6 +93,7 @@ def openlane_cars():
         cars_data = response.json()
         for car in cars_data["Auctions"]:
             new_cars[car["ChassisNumber"]] = dict(
+                car_id=car["ChassisNumber"],
                 vin=car["ChassisNumber"],
                 description=car["CarTitleList"]["en"],
                 url=base_url + str(car["AuctionId"]),
@@ -103,7 +106,73 @@ def openlane_cars():
     return new_cars
 
 
-bot = telegram.Bot(token=os.environ.get("CAR_ALERT_BOT_TOKEN"))
+def outlet_cars():
+    new_cars = dict()
+    cars_html = requests.get(
+        "https://www.caroutlet.eu/cars-async",
+        params={
+            "page": 1,
+            "sort": "newly_added",
+            "filter[search_id]": None,
+            "filter[manufacturer_id][]": 2,
+            "filter[model_id][]": 100,
+            "filter[engine_type_id][]": 1,
+        },
+        cookies=dict(AUTUS=os.environ.get("CAR_OUTLET_COOKIE"))
+    ).json()["carsHtml"]
+
+    # print(cars_html)
+    cars_html_data = BeautifulSoup(cars_html, "html.parser")
+    car_elements = cars_html_data.find_all("a", class_="table-cell__group_with-figure")
+    for car_element in car_elements:
+        vin = None
+        price = 0
+        url = car_element.attrs["href"]
+        car_id = url.split("/")[-1]
+        car_html = requests.get(
+            url,
+            cookies=dict(AUTUS=os.environ.get("CAR_OUTLET_COOKIE"))
+        ).content
+        car_html_data = BeautifulSoup(car_html, "html.parser")
+
+        description = car_html_data.find_all("span", class_="gallery__title-inner")[1].text
+        print(description)
+        image_url = car_html_data.find("div", class_="fotorama gallery-main").find("a").attrs["href"]
+
+        if car_html_data.find("li", string=" VIN-код ") is not None:
+            vin = (
+                car_html_data
+                .find("li", string=" VIN-код ")
+                .parent.find_all("li")[5]
+                .text
+                .replace(" ", "")
+            )
+
+        if car_html_data.find("button", string=re.compile("Купить")):
+            price = (
+                car_html_data
+                .find("button", string=re.compile("Купить"))
+                .text
+            )
+            price = int(re.sub("[^0-9]", "", price))
+
+        new_cars[vin or car_id] = dict(
+            car_id=vin or car_id,
+            vin=vin,
+            description=description,
+            url=url,
+            image_url=image_url,
+            price=price,
+            estimated_price=0,
+            currency="EUR"
+        )
+    return new_cars
+
+
+bot = telegram.Bot(
+    token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
+    request=HTTPXRequest(pool_timeout=20, connect_timeout=20, connection_pool_size=20)
+)
 
 
 def get_price(car_info):
@@ -119,7 +188,7 @@ def get_price(car_info):
 async def send_message(car_info):
     print(car_info)
     session.add(Cars(
-        id=car_info["vin"],
+        id=car_info["car_id"],
         description=car_info["description"],
         url=car_info["url"],
         image_url=car_info["image_url"]
@@ -148,16 +217,16 @@ def get_sent_cars():
 async def main():
     semaphore = asyncio.Semaphore(5)
 
-    new_cars = openlane_cars()
+    new_cars = openlane_cars() | outlet_cars()
     sent_cars = get_sent_cars()
 
     messages = list()
 
-    for vin in new_cars:
-        if vin in sent_cars:
+    for car_id in new_cars:
+        if car_id in sent_cars:
             continue
         async with semaphore:
-            messages.append(send_message(new_cars[vin]))
+            messages.append(send_message(new_cars[car_id]))
 
     await asyncio.gather(*messages)
 
@@ -165,4 +234,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    logging.disable(logging.INFO)
     asyncio.run(main())
