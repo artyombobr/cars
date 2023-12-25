@@ -2,28 +2,18 @@ import os
 import re
 import requests
 import logging
-import sqlalchemy as db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String
-from telegram.ext import (
-    Application,
-    ChatMemberHandler,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
+from sqlalchemy import Column, String
 from telegram.request import HTTPXRequest
-
-Base = declarative_base()
-from html.parser import HTMLParser
 import telegram
 import asyncio
 from bs4 import BeautifulSoup
 
 chat_id = "170311207"
+
+Base = declarative_base()
 
 engine = create_engine(
     "{dialect}://{user}:{password}@{host}:5432/{db}?sslmode=require".format(
@@ -121,7 +111,6 @@ def outlet_cars():
         cookies=dict(AUTUS=os.environ.get("CAR_OUTLET_COOKIE"))
     ).json()["carsHtml"]
 
-    # print(cars_html)
     cars_html_data = BeautifulSoup(cars_html, "html.parser")
     car_elements = cars_html_data.find_all("a", class_="table-cell__group_with-figure")
     for car_element in car_elements:
@@ -136,7 +125,6 @@ def outlet_cars():
         car_html_data = BeautifulSoup(car_html, "html.parser")
 
         description = car_html_data.find_all("span", class_="gallery__title-inner")[1].text
-        print(description)
         image_url = car_html_data.find("div", class_="fotorama gallery-main").find("a").attrs["href"]
 
         if car_html_data.find("li", string=" VIN-код ") is not None:
@@ -169,6 +157,51 @@ def outlet_cars():
     return new_cars
 
 
+def bid_cars():
+    new_cars = dict()
+    vin = None
+    base_url = "https://bidcar.eu"
+    cars_html = requests.get(
+        url="https://bidcar.eu/ru/cars",
+        params={
+            "cs[make][0]": 2,
+            "cs[make][1]": 3,
+            "cs[model_short][2][0]": "q8",
+            "cs[model_short][3][0]": "x5"
+        }
+    ).content
+
+    cars_html_data = BeautifulSoup(cars_html, "html.parser")
+    car_elements = cars_html_data.find_all("div", class_="carslist-item-a")
+    for car_element in car_elements:
+        url = base_url + car_element.find("a").attrs["href"]
+        car_id = url[25:url.find("-")]
+        car_html = requests.get(
+            url=url,
+            cookies=dict(
+                PHPSESSID=os.environ.get("BIDCAR_COOKIE")
+            )
+        ).content
+        car_html_data = BeautifulSoup(car_html, "html.parser")
+        image_url = car_html_data.find("div", class_="carview-img").attrs["data-src"]
+        if car_html_data.find("th", string="VIN:") is not None:
+            vin = list(car_html_data.find("th", string="VIN:").find_next("td").stripped_strings)[0]
+
+        description = car_html_data.find("h1").text
+
+        new_cars[vin or car_id] = dict(
+            car_id=vin or car_id,
+            vin=vin,
+            description=description,
+            url=url,
+            image_url=image_url,
+            estimated_price=0,
+            price=0
+        )
+
+    return new_cars
+
+
 bot = telegram.Bot(
     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
     request=HTTPXRequest(pool_timeout=20, connect_timeout=20, connection_pool_size=20)
@@ -186,7 +219,6 @@ def get_price(car_info):
 
 
 async def send_message(car_info):
-    print(car_info)
     session.add(Cars(
         id=car_info["car_id"],
         description=car_info["description"],
@@ -216,10 +248,8 @@ def get_sent_cars():
 
 async def main():
     semaphore = asyncio.Semaphore(5)
-
-    new_cars = openlane_cars() | outlet_cars()
+    new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
-
     messages = list()
 
     for car_id in new_cars:
