@@ -14,6 +14,8 @@ jobs:
       CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       DB_USER: ${{ secrets.DB_USER }}
+      CAR_OUTLET_COOKIE: ${{ secrets.CAR_OUTLET_COOKIE }}
+      BIDCAR_COOKIE: ${{ secrets.BIDCAR_COOKIE }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
