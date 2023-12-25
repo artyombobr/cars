@@ -49,7 +49,7 @@ def openlane_cars():
                 },
                 {
                     'Make': 'BMW',
-                    'Models': ["X4", "X5"]
+                    'Models': ["X4", "X5", "X6"]
                 }
             ],
             'FuelTypes': [
@@ -57,7 +57,7 @@ def openlane_cars():
             ],
             'RegistrationYearRange': {
                 'From': 2019,
-                'To': None
+                'To': 2021
             }
         },
         'Sort': {
@@ -70,7 +70,6 @@ def openlane_cars():
             'ItemsPerPage': 1000,
         },
         'SavedSearchId': None,
-        'PageUrl': 'https://www.openlane.eu/en/findcar?makesModels=Audi%2CQ8&fuelTypes=Diesel',
     }
     response = requests.post(
         "https://www.openlane.eu/en/findcarv6/search",
