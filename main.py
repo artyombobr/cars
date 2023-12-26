@@ -208,7 +208,7 @@ def bid_cars():
 
 bot = telegram.Bot(
     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
-    request=HTTPXRequest(pool_timeout=60, connect_timeout=60, connection_pool_size=1000)
+    request=HTTPXRequest(pool_timeout=100, connect_timeout=100, connection_pool_size=1000)
 )
 
 
@@ -251,7 +251,7 @@ def get_sent_cars():
 
 
 async def main():
-    semaphore = asyncio.Semaphore()
+    semaphore = asyncio.Semaphore(10)
     new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
     messages = list()
