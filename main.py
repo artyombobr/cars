@@ -40,37 +40,32 @@ class Cars(Base):
 
 def openlane_cars():
     new_cars = dict()
-    json_data = {
-        'query': {
-            'MakeModels': [
-                {
-                    'Make': 'Audi',
-                    'Models': ['Q8'],
-                },
-                {
-                    'Make': 'BMW',
-                    'Models': ["X4", "X5", "X6"]
-                }
+    json_data = dict(
+        query=dict(
+            MakeModels=[
+                dict(
+                    Make="Audi",
+                    Models=["Q8"],
+                ),
+                dict(
+                    Make="BMW",
+                    Models=["X3", "X4", "X5", "X6"]
+                )
             ],
-            'FuelTypes': [
-                'Diesel',
-            ],
-            'RegistrationYearRange': {
-                'From': 2019,
-                'To': 2021
-            }
-        },
-        'Sort': {
-            'Field': 'BatchStartDateForSorting',
-            'Direction': 'ascending',
-            'SortType': 'Field',
-        },
-        'Paging': {
-            'PageNumber': 1,
-            'ItemsPerPage': 1000,
-        },
-        'SavedSearchId': None,
-    }
+            FuelTypes=["Diesel"],
+            RegistrationYearRange=dict(From=2019, To=2021)
+        ),
+        Sort=dict(
+            Field="BatchStartDateForSorting",
+            Direction="ascending",
+            SortType="Field",
+        ),
+        Paging=dict(
+            PageNumber=1,
+            ItemsPerPage=1000,
+        ),
+        SavedSearchId=None,
+    )
     response = requests.post(
         "https://www.openlane.eu/en/findcarv6/search",
         json=json_data
@@ -103,9 +98,19 @@ def outlet_cars():
             "page": 1,
             "sort": "newly_added",
             "filter[search_id]": None,
-            "filter[manufacturer_id][]": 2,
-            "filter[model_id][]": 100,
-            "filter[engine_type_id][]": 1,
+            "filter[manufacturer_id][]": [
+                1,  # AUDI
+                2   # BMW
+            ],
+            "filter[model_id][]": [
+                99,   # X3
+                100,  # X5
+                325,  # X6
+                738,  # X4
+                829   # Q8
+            ],
+            "filter[engine_type_id][]": 1,  # Diesel,
+            "filter[year][]:": [2019, 2020, 2021]
         },
         cookies=dict(AUTUS=os.environ.get("CAR_OUTLET_COOKIE"))
     ).json()["carsHtml"]
@@ -163,10 +168,10 @@ def bid_cars():
     cars_html = requests.get(
         url="https://bidcar.eu/ru/cars",
         params={
-            "cs[make][0]": 2,
-            "cs[make][1]": 3,
+            "cs[make][]": [2, 3],
             "cs[model_short][2][0]": "q8",
-            "cs[model_short][3][0]": "x5"
+            "cs[model_short][3][]": ["x3", "x4", "x5", "x6"],
+            "per-page": 60
         }
     ).content
 
@@ -203,7 +208,7 @@ def bid_cars():
 
 bot = telegram.Bot(
     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
-    request=HTTPXRequest(pool_timeout=20, connect_timeout=20, connection_pool_size=20)
+    # request=HTTPXRequest(pool_timeout=60, connect_timeout=60, connection_pool_size=30)
 )
 
 
@@ -246,7 +251,7 @@ def get_sent_cars():
 
 
 async def main():
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore()
     new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
     messages = list()
