@@ -251,7 +251,7 @@ def get_sent_cars():
 
 
 async def main():
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore()
     new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
     messages = list()
