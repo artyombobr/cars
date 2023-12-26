@@ -208,7 +208,7 @@ def bid_cars():
 
 bot = telegram.Bot(
     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
-    # request=HTTPXRequest(pool_timeout=60, connect_timeout=60, connection_pool_size=30)
+    request=HTTPXRequest(pool_timeout=60, connect_timeout=60, connection_pool_size=1000)
 )
 
 
