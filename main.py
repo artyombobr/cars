@@ -205,18 +205,6 @@ def bid_cars():
     return new_cars
 
 
-# bot = telegram.Bot(
-#     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
-#     # request=HTTPXRequest(
-#     #     pool_timeout=100,
-#     #     connect_timeout=100,
-#     #     connection_pool_size=1000,
-#     #     # read_timeout=100,
-#     #     # write_timeout=100
-#     # )
-# )
-
-
 def get_price(car_info):
     if car_info["price"] > 0:
         price = '{0:,}'.format(int(car_info["price"])).replace(',', ' ')
