@@ -6,7 +6,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String
-from telegram.request import HTTPXRequest
 import telegram
 import asyncio
 from bs4 import BeautifulSoup
@@ -206,10 +205,16 @@ def bid_cars():
     return new_cars
 
 
-bot = telegram.Bot(
-    token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
-    request=HTTPXRequest(pool_timeout=100, connect_timeout=100, connection_pool_size=1000)
-)
+# bot = telegram.Bot(
+#     token=os.environ.get("CAR_ALERT_BOT_TOKEN"),
+#     # request=HTTPXRequest(
+#     #     pool_timeout=100,
+#     #     connect_timeout=100,
+#     #     connection_pool_size=1000,
+#     #     # read_timeout=100,
+#     #     # write_timeout=100
+#     # )
+# )
 
 
 def get_price(car_info):
@@ -222,7 +227,7 @@ def get_price(car_info):
     return ""
 
 
-async def send_message(car_info):
+async def send_message(bot, car_info):
     session.add(Cars(
         id=car_info["car_id"],
         description=car_info["description"],
@@ -251,18 +256,14 @@ def get_sent_cars():
 
 
 async def main():
-    semaphore = asyncio.Semaphore()
     new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
-    messages = list()
 
-    for car_id in new_cars:
-        if car_id in sent_cars:
-            continue
-        async with semaphore:
-            messages.append(send_message(new_cars[car_id]))
-
-    await asyncio.gather(*messages)
+    async with telegram.Bot(os.environ.get("CAR_ALERT_BOT_TOKEN")) as bot:
+        for car_id in new_cars:
+            if car_id in sent_cars:
+                continue
+            await send_message(bot, new_cars[car_id])
 
     session.close()
 
