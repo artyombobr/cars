@@ -48,7 +48,10 @@ def openlane_cars():
                 ),
                 dict(
                     Make="BMW",
-                    Models=["X3", "X4", "X5", "X6"]
+                    Models=[
+                        # "X3", 
+                        "X4", "X5", "X6"
+                    ]
                 )
             ],
             FuelTypes=["Diesel"],
@@ -102,7 +105,7 @@ def outlet_cars():
                 2   # BMW
             ],
             "filter[model_id][]": [
-                99,   # X3
+                # 99,   # X3
                 100,  # X5
                 325,  # X6
                 738,  # X4
@@ -169,7 +172,10 @@ def bid_cars():
         params={
             "cs[make][]": [2, 3],
             "cs[model_short][2][0]": "q8",
-            "cs[model_short][3][]": ["x3", "x4", "x5", "x6"],
+            "cs[model_short][3][]": [
+                # "x3", 
+                "x4", "x5", "x6"
+            ],
             "per-page": 60
         }
     ).content
