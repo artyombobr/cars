@@ -9,6 +9,7 @@ from sqlalchemy import Column, String
 import telegram
 import asyncio
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 chat_id = "170311207"
 
@@ -49,7 +50,7 @@ def openlane_cars():
                 dict(
                     Make="BMW",
                     Models=[
-                        # "X3", 
+                        # "X3",
                         "X4", "X5", "X6"
                     ]
                 )
@@ -173,7 +174,7 @@ def bid_cars():
             "cs[make][]": [2, 3],
             "cs[model_short][2][0]": "q8",
             "cs[model_short][3][]": [
-                # "x3", 
+                # "x3",
                 "x4", "x5", "x6"
             ],
             "per-page": 60
@@ -211,6 +212,84 @@ def bid_cars():
     return new_cars
 
 
+def autobid_cars():
+    new_cars = dict()
+    vin = None
+    pages = 1
+    current_page = 1
+    while current_page <= pages:
+        cars_html = requests.get(
+            url="https://autobid.de",
+            params={
+                "show": "get",
+                "action": "search",
+                "brand_id[0]": 1,
+                "21_1": 2019,
+                "21_2": 2021,
+                "page": current_page,
+                "L": 1
+            }
+        ).content
+
+        current_page += 1
+
+        cars_html_data = BeautifulSoup(cars_html, "html.parser")
+        pages = int(cars_html_data.find_all("a", class_="dwarf_pager_link")[-1].text)
+        car_elements = cars_html_data.find_all("tr", class_="carListRow")
+        for car_element in car_elements:
+            url = car_element.attrs["href"]
+            car_id = car_element.attrs["autobid:carid"]
+            url = urlparse(url).scheme + "://" + urlparse(url).netloc
+
+            car_html = requests.get(
+                url=url,
+                params=dict(
+                    action="car",
+                    show="showCar",
+                    id=car_id,
+                    L=1
+                )
+            ).content
+
+            car_html_data = BeautifulSoup(car_html, "html.parser")
+            if car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1") is not None:
+                description = car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1").text
+            else:
+                description = car_html_data.find("div", class_="d_s_det").find("b").text
+
+            if car_html_data.find("td", class_="premium_detale_table_zdjecia_p") is not None:
+                image_url = car_html_data.find("td", class_="premium_detale_table_zdjecia_p").find("img").attrs["src"]
+                image_url = image_url[:-5] + "hd.jpg"
+            else:
+                image_url = car_html_data.find("a", class_="js_details_gallery_single").attrs["href"]
+
+            if car_html_data.find("table", class_="premium_detale_table_opis_dane_cena") is not None:
+                price = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[1].text
+                vat = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[3].text
+            else:
+                price = car_html_data.find("tr", class_="price_font").find("td").text
+                vat = car_html_data.find("tr", class_="pod_font").find("td").text
+            price = int(re.sub("[^0-9]", "", price))
+            if "Including" in vat:
+                price = int(price * 0.81)
+
+            for model in ["BMWX4", "BMWX5", "BMWX6", "BMW7", "BMW8"]:
+                if model in description.replace(" ", "").upper():
+                    new_cars[vin or car_id] = dict(
+                        car_id=vin or car_id,
+                        vin=vin,
+                        description=description,
+                        url=f"{url}/?action=car&show=showCar&id={car_id}",
+                        image_url=image_url,
+                        estimated_price=price,
+                        price=0,
+                        currency="EUR"
+                    )
+                    break
+
+    return new_cars
+
+
 def get_price(car_info):
     if car_info["price"] > 0:
         price = '{0:,}'.format(int(car_info["price"])).replace(',', ' ')
@@ -230,14 +309,17 @@ async def send_message(bot, car_info):
     ))
 
     price = get_price(car_info)
-
-    await bot.send_photo(
-        chat_id=chat_id,
-        caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>" + price,
-        photo=car_info["image_url"],
-        parse_mode="HTML"
-    )
-    session.commit()
+    try:
+        await bot.send_photo(
+            chat_id=chat_id,
+            caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>" + price,
+            photo=car_info["image_url"],
+            parse_mode="HTML"
+        )
+        session.commit()
+    except Exception as e:
+        print(car_info)
+        print(e)
 
 
 def get_sent_cars():
@@ -250,7 +332,7 @@ def get_sent_cars():
 
 
 async def main():
-    new_cars = bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
+    new_cars = autobid_cars() | bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
 
     async with telegram.Bot(os.environ.get("CAR_ALERT_BOT_TOKEN")) as bot:
