@@ -191,7 +191,8 @@ def bid_cars():
             url=url,
             cookies=dict(
                 PHPSESSID=os.environ.get("BIDCAR_COOKIE")
-            )
+            ),
+            verify=False
         ).content
         car_html_data = BeautifulSoup(car_html, "html.parser")
         image_url = car_html_data.find("div", class_="carview-img").attrs["data-src"]
