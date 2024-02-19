@@ -178,7 +178,8 @@ def bid_cars():
                 "x4", "x5", "x6"
             ],
             "per-page": 60
-        }
+        },
+        verify=False
     ).content
 
     cars_html_data = BeautifulSoup(cars_html, "html.parser")
@@ -332,7 +333,8 @@ def get_sent_cars():
 
 
 async def main():
-    new_cars = autobid_cars() | bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
+    # new_cars = autobid_cars() | bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
+    new_cars = bid_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
 
     async with telegram.Bot(os.environ.get("CAR_ALERT_BOT_TOKEN")) as bot:
