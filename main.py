@@ -254,40 +254,44 @@ def autobid_cars():
             ).content
 
             car_html_data = BeautifulSoup(car_html, "html.parser")
-            if car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1") is not None:
-                description = car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1").text
-            else:
-                description = car_html_data.find("div", class_="d_s_det").find("b").text
+            try:
+                if car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1") is not None:
+                    description = car_html_data.find("p", class_="premium_detale_name_zaokraglenie_bottom_right_t1").text
+                else:
+                    description = car_html_data.find("div", class_="d_s_det").find("b").text
 
-            if car_html_data.find("td", class_="premium_detale_table_zdjecia_p") is not None:
-                image_url = car_html_data.find("td", class_="premium_detale_table_zdjecia_p").find("img").attrs["src"]
-                image_url = image_url[:-5] + "hd.jpg"
-            else:
-                image_url = car_html_data.find("a", class_="js_details_gallery_single").attrs["href"]
+                if car_html_data.find("td", class_="premium_detale_table_zdjecia_p") is not None:
+                    image_url = car_html_data.find("td", class_="premium_detale_table_zdjecia_p").find("img").attrs["src"]
+                    image_url = image_url[:-5] + "hd.jpg"
+                else:
+                    image_url = car_html_data.find("a", class_="js_details_gallery_single").attrs["href"]
 
-            if car_html_data.find("table", class_="premium_detale_table_opis_dane_cena") is not None:
-                price = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[1].text
-                vat = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[3].text
-            else:
-                price = car_html_data.find("tr", class_="price_font").find("td").text
-                vat = car_html_data.find("tr", class_="pod_font").find("td").text
-            price = int(re.sub("[^0-9]", "", price))
-            if "Including" in vat:
-                price = int(price * 0.81)
+                if car_html_data.find("table", class_="premium_detale_table_opis_dane_cena") is not None:
+                    price = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[1].text
+                    vat = car_html_data.find("table", class_="premium_detale_table_opis_dane_cena").find_all("td")[3].text
+                else:
+                    price = car_html_data.find("tr", class_="price_font").find("td").text
+                    vat = car_html_data.find("tr", class_="pod_font").find("td").text
+                price = int(re.sub("[^0-9]", "", price))
+                if "Including" in vat:
+                    price = int(price * 0.81)
 
-            for model in ["BMWX4", "BMWX5", "BMWX6", "BMW7", "BMW8"]:
-                if model in description.replace(" ", "").upper():
-                    new_cars[vin or car_id] = dict(
-                        car_id=vin or car_id,
-                        vin=vin,
-                        description=description,
-                        url=f"{url}/?action=car&show=showCar&id={car_id}",
-                        image_url=image_url,
-                        estimated_price=price,
-                        price=0,
-                        currency="EUR"
-                    )
-                    break
+                for model in ["BMWX4", "BMWX5", "BMWX6", "BMW7", "BMW8"]:
+                    if model in description.replace(" ", "").upper():
+                        new_cars[vin or car_id] = dict(
+                            car_id=vin or car_id,
+                            vin=vin,
+                            description=description,
+                            url=f"{url}/?action=car&show=showCar&id={car_id}",
+                            image_url=image_url,
+                            estimated_price=price,
+                            price=0,
+                            currency="EUR"
+                        )
+                        break
+            except Exception as error:
+                print(error)
+                print("car_id", car_id)
 
     return new_cars
 
