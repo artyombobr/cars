@@ -2,14 +2,19 @@ import os
 import re
 import requests
 import logging
+import warnings
+from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, DateTime
 import telegram
 import asyncio
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from urllib.parse import parse_qs
+
+warnings.filterwarnings('ignore')
 
 chat_id = "170311207"
 
@@ -36,6 +41,76 @@ class Cars(Base):
     description = Column(String)
     url = Column(String)
     image_url = Column(String)
+    created_dttm = Column(DateTime)
+
+
+def mobilede_cars():
+    new_cars = dict()
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6284.225 Safari/537.36',
+    }
+    response = requests.get("https://suchen.mobile.de/fahrzeuge/search.html", headers=headers)
+    cookies = response.cookies
+    pages = 1000
+    current_page = 1
+    while current_page <= pages:
+        cars_html = requests.get(
+            "https://suchen.mobile.de/fahrzeuge/search.html",
+            params=dict(
+                pageNumber=current_page,
+                dam="false",
+                fr="2019:2021",
+                ft=["DIESEL", "HYBRID_DIESEL"],
+                isSearchRequest="true",
+                ms=["3500;49;;", "1900;46;;"],
+                ref="srpHead",
+                s="Car",
+                sb="doc",
+                od="down",
+                vc="Car"
+            ),
+            cookies=cookies,
+            headers=headers
+        ).content
+
+        current_page += 1
+
+        cars_html_data = BeautifulSoup(cars_html, "html.parser")
+        car_elements = cars_html_data.find_all("a", attrs={"data-testid": re.compile("result-listing-")})
+        if len(car_elements) == 0:
+            break
+        for car_element in car_elements:
+            try:
+                vin = None
+                description = car_element.find("h2").text
+                url = "https://suchen.mobile.de" + car_element.attrs["href"]
+                car_id = parse_qs(urlparse(url).query)["id"][0]
+                price = car_element.find("span", attrs={"data-testid": "price-label"}).text
+                price = int(re.sub("[^0-9]", "", price))
+                if car_element.find("div", attrs={"data-testid": "price-vat"}) is not None:
+                    vat = car_element.find("div", attrs={"data-testid": "price-vat"}).text
+                    vat = float(re.sub("[^0-9,]", "", vat).replace(",", "."))
+                    price = price / (100 + vat) * 100
+
+                image_url = car_element.find("img").attrs["srcset"].split(",")[-1].split()[0]
+
+                if price > 48000:
+                    continue
+                new_cars[vin or car_id] = dict(
+                    car_id=vin or car_id,
+                    vin=vin,
+                    description=description,
+                    url=url,
+                    image_url=image_url,
+                    estimated_price=0,
+                    price=price,
+                    currency="€"
+                )
+            except Exception as error:
+                print(error)
+                print("car_id", car_id)
+
+    return new_cars
 
 
 def openlane_cars():
@@ -166,7 +241,6 @@ def outlet_cars():
 
 def bid_cars():
     new_cars = dict()
-    vin = None
     base_url = "https://bidcar.eu"
     cars_html = requests.get(
         url="https://bidcar.eu/ru/cars",
@@ -185,6 +259,7 @@ def bid_cars():
     cars_html_data = BeautifulSoup(cars_html, "html.parser")
     car_elements = cars_html_data.find_all("div", class_="carslist-item-a")
     for car_element in car_elements:
+        vin = None
         url = base_url + car_element.find("a").attrs["href"]
         car_id = url[25:url.find("-")]
         car_html = requests.get(
@@ -216,7 +291,6 @@ def bid_cars():
 
 def autobid_cars():
     new_cars = dict()
-    vin = None
     pages = 1
     current_page = 1
     while current_page <= pages:
@@ -239,6 +313,7 @@ def autobid_cars():
         pages = int(cars_html_data.find_all("a", class_="dwarf_pager_link")[-1].text)
         car_elements = cars_html_data.find_all("tr", class_="carListRow")
         for car_element in car_elements:
+            vin = None
             url = car_element.attrs["href"]
             car_id = car_element.attrs["autobid:carid"]
             url = urlparse(url).scheme + "://" + urlparse(url).netloc
@@ -311,7 +386,8 @@ async def send_message(bot, car_info):
         id=car_info["car_id"],
         description=car_info["description"],
         url=car_info["url"],
-        image_url=car_info["image_url"]
+        image_url=car_info["image_url"],
+        created_dttm=datetime.now()
     ))
 
     price = get_price(car_info)
@@ -338,7 +414,7 @@ def get_sent_cars():
 
 
 async def main():
-    new_cars = autobid_cars() | bid_cars() | outlet_cars() | openlane_cars()  # priority sites at the end
+    new_cars = bid_cars() | outlet_cars() | openlane_cars() | mobilede_cars()  # priority sites at the end
     sent_cars = get_sent_cars()
 
     async with telegram.Bot(os.environ.get("CAR_ALERT_BOT_TOKEN")) as bot:
