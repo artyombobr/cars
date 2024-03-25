@@ -1,18 +1,18 @@
 import os
 import re
-import requests
 import logging
+import asyncio
+import telegram
 import warnings
+import requests
 from datetime import datetime
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, DateTime
-import telegram
-import asyncio
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
 
 warnings.filterwarnings('ignore')
 
@@ -45,6 +45,22 @@ class Cars(Base):
 
 
 def mobilede_cars():
+    def get_rating(price_element):
+        rating_list = [
+            "High price",
+            "Increased price",
+            "Fair price",
+            "Good price",
+            "Very good price"
+        ]
+        rating_string = price_element.find_all("div", recursive=False)[2].find_all("div")[1].text
+        if rating_string == "No rating":
+            return ""
+        else:
+            rating_number = rating_list.index(rating_string) + 1
+
+            return "\n" + "🟩" * rating_number + "⬜️" * (5 - rating_number) + " - " + rating_string
+
     new_cars = dict()
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6284.225 Safari/537.36',
@@ -62,12 +78,13 @@ def mobilede_cars():
                 fr="2019:2021",
                 ft=["DIESEL", "HYBRID_DIESEL"],
                 isSearchRequest="true",
-                ms=["3500;49;;", "1900;46;;"],
+                ms=["3500;49;;", "1900;46;;", "3500;60;;"],
                 ref="srpHead",
                 s="Car",
                 sb="doc",
                 od="down",
-                vc="Car"
+                vc="Car",
+                lang="en"
             ),
             cookies=cookies,
             headers=headers
@@ -92,10 +109,10 @@ def mobilede_cars():
                     vat = float(re.sub("[^0-9,]", "", vat).replace(",", "."))
                     price = price / (100 + vat) * 100
 
-                image_url = car_element.find("img").attrs["srcset"].split(",")[-1].split()[0]
-
-                if price > 48000:
+                if price > 45000:
                     continue
+                image_url = car_element.find("img").attrs["srcset"].split(",")[-1].split()[0]
+                rating = get_rating(car_element.find("span", attrs={"data-testid": "price-label"}).parent.parent)
                 new_cars[vin or car_id] = dict(
                     car_id=vin or car_id,
                     vin=vin,
@@ -104,7 +121,9 @@ def mobilede_cars():
                     image_url=image_url,
                     estimated_price=0,
                     price=price,
-                    currency="€"
+                    currency="€",
+                    source="mobile.de",
+                    rating=rating
                 )
             except Exception as error:
                 print(error)
@@ -162,7 +181,8 @@ def openlane_cars():
                 image_url=car["ThumbnailUrl"],
                 price=car["BuyNowPrice"],
                 estimated_price=car["RequestedSalesPrice"],
-                currency=car["CurrencyCodeId"]
+                currency=car["CurrencyCodeId"],
+                source="adesa.eu"
             )
 
     return new_cars
@@ -234,7 +254,8 @@ def outlet_cars():
             image_url=image_url,
             price=price,
             estimated_price=0,
-            currency="EUR"
+            currency="EUR",
+            source="caroutlet.eu"
         )
     return new_cars
 
@@ -283,7 +304,8 @@ def bid_cars():
             url=url,
             image_url=image_url,
             estimated_price=0,
-            price=0
+            price=0,
+            source="bidcar.eu"
         )
 
     return new_cars
@@ -361,7 +383,8 @@ def autobid_cars():
                             image_url=image_url,
                             estimated_price=price,
                             price=0,
-                            currency="EUR"
+                            currency="EUR",
+                            source="autobid.de"
                         )
                         break
             except Exception as error:
@@ -374,14 +397,15 @@ def autobid_cars():
 def get_price(car_info):
     if car_info["price"] > 0:
         price = '{0:,}'.format(int(car_info["price"])).replace(',', ' ')
-        return "\n\n<b>" + price + " " + car_info["currency"] + "</b>"
+        return "<b>" + price + " " + car_info["currency"] + "</b>"
     elif car_info["estimated_price"] > 0:
         price = '{0:,}'.format(int(car_info["estimated_price"])).replace(',', ' ')
-        return "\n\n<b>" + price + " " + car_info["currency"] + "</b>"
+        return "<b>" + price + " " + car_info["currency"] + "</b>"
     return ""
 
 
 async def send_message(bot, car_info):
+
     session.add(Cars(
         id=car_info["car_id"],
         description=car_info["description"],
@@ -390,11 +414,25 @@ async def send_message(bot, car_info):
         created_dttm=datetime.now()
     ))
 
-    price = get_price(car_info)
+    caption = """
+<a href='{url}'>{description}</a> 
+    
+{price} 
+{rating}
+
+{source}
+    """.format(
+        url=car_info["url"],
+        description=car_info["description"],
+        price=get_price(car_info),
+        rating=car_info.get("rating"),
+        source=car_info.get("source")
+    )
+
     try:
-        await bot.send_photo(
+        response = await bot.send_photo(
             chat_id=chat_id,
-            caption="<a href='" + car_info["url"] + "'>" + car_info["description"] + "</a>" + price,
+            caption=caption,
             photo=car_info["image_url"],
             parse_mode="HTML"
         )
