@@ -7,11 +7,10 @@ import warnings
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
+from urllib.parse import urlparse, parse_qs
 from sqlalchemy import Column, String, DateTime
 
 warnings.filterwarnings('ignore')
@@ -78,7 +77,7 @@ def mobilede_cars():
                 fr="2019:2021",
                 ft=["DIESEL", "HYBRID_DIESEL"],
                 isSearchRequest="true",
-                ms=["3500;49;;", "1900;46;;", "3500;60;;"],
+                ms=["3500;49;;", "1900;46;;"],
                 ref="srpHead",
                 s="Car",
                 sb="doc",
@@ -101,7 +100,10 @@ def mobilede_cars():
                 vin = None
                 description = car_element.find("h2").text
                 url = "https://suchen.mobile.de" + car_element.attrs["href"]
-                car_id = parse_qs(urlparse(url).query)["id"][0]
+                if "id" not in parse_qs(urlparse(url).query):
+                    car_id = urlparse(url).path.split("/")[-1]
+                else:
+                    car_id = parse_qs(urlparse(url).query)["id"][0]
                 price = car_element.find("span", attrs={"data-testid": "price-label"}).text
                 price = int(re.sub("[^0-9]", "", price))
                 if car_element.find("div", attrs={"data-testid": "price-vat"}) is not None:
@@ -430,7 +432,7 @@ async def send_message(bot, car_info):
     )
 
     try:
-        response = await bot.send_photo(
+        await bot.send_photo(
             chat_id=chat_id,
             caption=caption,
             photo=car_info["image_url"],
