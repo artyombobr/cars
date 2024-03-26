@@ -427,7 +427,7 @@ async def send_message(bot, car_info):
         url=car_info["url"],
         description=car_info["description"],
         price=get_price(car_info),
-        rating=car_info.get("rating"),
+        rating=car_info.get("rating", ""),
         source=car_info.get("source")
     )
 
