@@ -111,7 +111,7 @@ def mobilede_cars():
                     vat = float(re.sub("[^0-9,]", "", vat).replace(",", "."))
                     price = price / (100 + vat) * 100
 
-                if price > 45000:
+                if price > 48000:
                     continue
                 image_url = car_element.find("img").attrs["srcset"].split(",")[-1].split()[0]
                 rating = get_rating(car_element.find("span", attrs={"data-testid": "price-label"}).parent.parent)
