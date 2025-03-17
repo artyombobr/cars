@@ -4,9 +4,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # Настройка Chrome
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # Запуск без графического интерфейса
-options.add_argument("--no-sandbox")  # Для работы в контейнере
-options.add_argument("--disable-dev-shm-usage")  # Исправляет ошибки в Docker
+# options.add_argument("--headless")  # Запуск без графического интерфейса
+# options.add_argument("--no-sandbox")  # Для работы в контейнере
+# options.add_argument("--disable-dev-shm-usage")  # Исправляет ошибки в Docker
 
 # Запуск браузера
 service = Service(ChromeDriverManager().install())
