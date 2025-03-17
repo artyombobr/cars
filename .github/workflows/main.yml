@@ -5,27 +5,36 @@ on:
     branches:
       - main
   schedule:
-    # - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *'
 
 jobs:
-  build:
+  run-selenium:
     runs-on: ubuntu-latest
-    env:
-      CAR_ALERT_BOT_TOKEN: ${{ secrets.CAR_ALERT_BOT_TOKEN }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_USER: ${{ secrets.DB_USER }}
-      CAR_OUTLET_COOKIE: ${{ secrets.CAR_OUTLET_COOKIE }}
-      BIDCAR_COOKIE: ${{ secrets.BIDCAR_COOKIE }}
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x' # замените '3.x' на версию Python, которую вы используете
+        python-version: '3.x'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run Python script
-      run: python main.py 
+        pip install selenium webdriver-manager
+
+    - name: Install Chrome & Chromedriver
+      run: |
+        sudo apt update
+        sudo apt install -y google-chrome-stable
+        sudo apt install -y chromium-chromedriver
+        echo "Chrome version:"
+        google-chrome --version
+        echo "Chromedriver version:"
+        chromedriver --version
+
+    - name: Run Selenium script
+      run: python main.py
 
