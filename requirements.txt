@@ -15,3 +15,5 @@ soupsieve==2.5
 SQLAlchemy==2.0.23
 typing_extensions==4.8.0
 urllib3==1.26.6
+selenium==4.27.1
+webdriver-manager==4.0.2
