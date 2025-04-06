@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '*/30 11 * * *'
+    - cron: '0 10,18 * * *'
 
 jobs:
   run-selenium:
