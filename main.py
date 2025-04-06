@@ -5,7 +5,7 @@ import logging
 import asyncio
 import telegram
 import warnings
-import cloudscraper
+# import cloudscraper
 from selenium import webdriver
 from urllib.parse import urlencode
 from sqlalchemy import create_engine
@@ -17,7 +17,7 @@ from selenium.webdriver.common.by import By
 from telegram.error import RetryAfter, TimedOut
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from tenacity import retry, stop_after_attempt, wait_fixed
+# from tenacity import retry, stop_after_attempt, wait_fixed
 
 warnings.filterwarnings("ignore")
 
@@ -26,9 +26,9 @@ class CarAlert:
     def __init__(self):
         self.pg = self.init_postgresql()
         self.telegram = telegram.Bot(token=os.environ.get("TELEGRAM_BOT_TOKEN"))
-        self.scraper = cloudscraper.create_scraper(
-            browser={"browser": "chrome", "platform": "windows", "mobile": False}
-        )
+        # self.scraper = cloudscraper.create_scraper(
+        #     browser={"browser": "chrome", "platform": "windows", "mobile": False}
+        # )
         self.filter_mapping = dict()
         self.selenium = self.init_selenium()
 
