@@ -5,7 +5,6 @@ import logging
 import asyncio
 import telegram
 import warnings
-import tempfile
 # import cloudscraper
 from selenium import webdriver
 from urllib.parse import urlencode
@@ -37,12 +36,11 @@ class CarAlert:
     def init_selenium():
         options = webdriver.ChromeOptions()
         # options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument(f"--user-data-dir={tempfile.mkdtemp()}")  # временная директория для профиля
+        options.add_argument("--no-sandbox")  # Для работы в контейнере
+        options.add_argument("--disable-dev-shm-usage")  # Исправляет ошибки в Docker
 
         return webdriver.Chrome(
-            service=Service(ChromeDriverManager(driver_version="134.0.6998.166").install()),
+            service=Service(ChromeDriverManager().install()),
             options=options
         )
 
