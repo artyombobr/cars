@@ -40,7 +40,7 @@ class CarAlert:
         options.add_argument("--disable-dev-shm-usage")  # Исправляет ошибки в Docker
 
         return webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
+            service=Service(ChromeDriverManager(driver_version="134.0.6998.165").install()),
             options=options
         )
 
