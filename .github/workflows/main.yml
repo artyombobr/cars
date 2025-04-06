@@ -32,11 +32,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y google-chrome-stable
-        sudo apt install -y chromium-chromedriver
         echo "Chrome version:"
         google-chrome --version
-        echo "Chromedriver version:"
-        chromedriver --version
 
     - name: Run Selenium script
       run: python main.py
